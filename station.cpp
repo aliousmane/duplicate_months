@@ -1,12 +1,10 @@
 #include "station.h"
-
+#include "MetVar.h"
 #include<string>
 #include<iostream>
 #include <algorithm>
 
 using namespace std;
-
-struct MetVar;
 
 	station::station(string id,string name, double lat, double lon, double elev,string wmo)
 	{
@@ -32,10 +30,10 @@ struct MetVar;
 	string station::getName(){ return station::m_name; }
 	string station::getWmoId(){ return station::m_wmoid; }
 	void station::setQc_flags(string *qc_flags){ /*station::m_qc_flags = qc_flags;*/ }
-	void station::setMetVar(MetVar metvar, string var){ (station::m_Met_var)[var]=metvar; }
-	MetVar station::getMetvar(string var)
+	void station::setMetVar(MetVar* metvar, string var){ (station::m_Met_var)[var]=metvar; }
+	MetVar* station::getMetvar(string var)
 	{ 
-		
+		cout<<station::m_Met_var[var]->getMdi();
 		return station::m_Met_var[var]; 
 	}
 	void station::setTime_units(string units){ m_time.units = units; }
@@ -43,5 +41,3 @@ struct MetVar;
 	std::string station::getTime_units(){ return m_time.units; }
 	std::vector<int> station::getTime_data(){ return m_time.data; }
 	void station::setHistory(string history){ m_history=history; }
-
-	

@@ -179,6 +179,7 @@
     <ClCompile Include="duplicate_months.cpp" />
     <ClCompile Include="Internal_checks.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MetVar.cpp" />
     <ClCompile Include="station.cpp" />
     <ClCompile Include="netCDFUtils.cpp" />
     <ClCompile Include="utils.cpp" />
@@ -186,6 +187,7 @@
   <ItemGroup>
     <ClInclude Include="duplicate_months.h" />
     <ClInclude Include="Internal_checks.h" />
+    <ClInclude Include="MetVar.h" />
     <ClInclude Include="python_function.h" />
     <ClInclude Include="station.h" />
     <ClInclude Include="stdafx.h" />

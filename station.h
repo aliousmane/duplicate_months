@@ -2,79 +2,14 @@
 #include<string>
 #include <vector>
 #include <map>
-#include <valarray>
 
 
+class MetVar;
 struct s_time
 	{
 		std::string units;
 		std::vector<int> data;
 	};
-struct MetVar
-{
-public:
-	MetVar::MetVar(){}
-
-	MetVar::MetVar(std::string name, std::string long_name)
-	{
-		MetVar::m_name = name;
-		MetVar::m_long_name = long_name;
-	}
-	MetVar::~MetVar()
-	{
-	}
-	std::string getName(){ return m_name; }
-	std::string getLong_Name(){ return m_long_name; }
-	std::string getUnits(){ return m_units; }
-	void setDtype(std::string dtype){ m_dtype = dtype; }
-	void setUnits(std::string units){ m_units = units; }
-	void setCalendar(std::string calendar){ m_calendar = calendar; }
-	void setMdi(std::string mdi){ m_mdi = mdi; }
-	void  setValidMax(std::string valid_max){ m_valid_max = valid_max; }
-	void  setValidMin(std::string valid_min){ m_valid_min = valid_min; }
-	void  setCoordinates(std::string coordinates){ m_coordinates = coordinates; }
-	void  setFdi(std::string fdi){ m_fdi = fdi; }
-	void  setCellmethods(std::string cell_methods){ m_cell_methods = cell_methods; }
-	void setStandard_name(std::string standard_name){ m_standard_name = standard_name; }
-	void setReportingStats(std::string reporting_stats){ m_reporting_stats = reporting_stats; }
-	std::string getMdi(){ return m_mdi; }
-	std::string getDtype(){ return m_dtype; }
-	void setFlagged_obs(std::vector<std::string> flagged_obs){ m_flagged_obs = flagged_obs; }
-	void setFlagged_value(std::string flagged_value){ m_flagged_value = flagged_value; }
-	void setData(std::valarray<std::string> data){ m_data = data; }
-	std::valarray<std::string> getData(){ return m_data; }
-	std::string toString()
-	{
-		return "Variable :" + m_name + ", " + m_long_name;
-	}
-	void MetVar::set_MetVar_attributes(std::string standard_name, std::string units, std::string mdi, std::string dtype)
-	{
-		m_units = units;
-		m_standard_name = standard_name;
-		m_dtype = dtype;
-		m_mdi = mdi;
-
-	}
-protected :std::string m_name;
-private:
-	
-	std::string m_long_name;
-	std::string m_units;
-	std::string m_standard_name;
-	std::string m_mdi;
-	std::string m_dtype;
-	std::string m_calendar;
-	std::string m_valid_max;
-	std::string m_valid_min;
-	std::string m_coordinates;
-	std::string m_cell_methods;
-	std::string m_fdi;
-	std::string m_flagged_value;
-	std::string m_reporting_stats;
-	std::vector<int> flags;
-	std::valarray<std::string> m_data;
-	std::vector <std::string> m_flagged_obs;
-};
 class station
 {
 
@@ -87,8 +22,8 @@ public:
 		std::string getName();
 		std::string getWmoId();
 		void setQc_flags(std::string * qc_flags);
-		void setMetVar(MetVar metvar, std::string var);
-		MetVar getMetvar(std::string var);
+		void setMetVar(MetVar* metvar, std::string var);
+		MetVar* getMetvar(std::string var);
 		void setTime_units(std::string units);
 		void setTime_data(std::vector<int> data);
 		std::string getTime_units();
@@ -107,7 +42,7 @@ private:
 	double m_lon;
 	double m_elev;
 	std::vector<std::string> m_qc_flags;
-	std::map<std::string, MetVar >  m_Met_var;
+	std::map<std::string, MetVar* >  m_Met_var;
 	s_time m_time;
 	std::string m_history;
 };
