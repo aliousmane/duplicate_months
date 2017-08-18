@@ -22,7 +22,6 @@
 #include "ncException.h"
 #include "map"
 #include "ncVarAtt.h"
-#include "MetVar.h"
 #include "python_function.h"
 
 
@@ -496,7 +495,7 @@ namespace NETCDFUTILS
 						this_var.setFlagged_value("-888");
 				}
 				//Ajouter la variable méteo à la liste des variables de la station stat
-				stat->setMetVar(&this_var, *variable);
+				stat->setMetVar(this_var, *variable);
 				
 			}
 			//read in the qc_flags array
@@ -541,9 +540,9 @@ namespace NETCDFUTILS
 
 					for (vector<string>::iterator var = process_var.begin(); var != process_var.end(); ++var)
 					{
-						MetVar *st_var = stat->getMetvar(*var);
+						MetVar st_var = stat->getMetvar(*var);
 						for (int i = 0; i < stat->getTime_data().size(); i++) //Nombre d'observations recueillies.
-							column.push_back(st_var->getMdi());
+							column.push_back(st_var.getMdi());
 						//Affecter la valeur manquante sur la colonne correspondant à la variable meteo
 						flagged_obs.push_back(column);
 					}
@@ -558,7 +557,7 @@ namespace NETCDFUTILS
 				int v = 0;
 				for (vector<string>::iterator var = process_var.begin(); var != process_var.end(); ++var, v++)
 				{
-					MetVar *st_var = stat->getMetvar(*var);
+					MetVar st_var = stat->getMetvar(*var);
 					//st_var->setReportingStats(reporting_values[v]);
 				}
 			}
@@ -583,8 +582,7 @@ namespace NETCDFUTILS
 		{
 			cerr << e.what() << endl;
 		}
-		MetVar *var_ = stat->getMetvar("dewpoints");
-		cout << var_->getLong_Name();
+		
 	}
 
 }

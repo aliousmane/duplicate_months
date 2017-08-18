@@ -7,7 +7,7 @@
 #include <map>
 #include "utils.h"
 #include<iostream>
-#include"MetVar.h"
+
 
 using namespace std;
 using namespace UTILS;
@@ -36,7 +36,7 @@ namespace DUPLICATE_MONTHS
 		int v = 0;
 		for (vector<string>::iterator variable = variable_list.begin(); variable != variable_list.end(); ++variable)
 		{
-			MetVar *st_var = stat.getMetvar(*variable); //Recuperer la variable meteo de la station
+			MetVar st_var = stat.getMetvar(*variable); //Recuperer la variable meteo de la station
 			vector<int> duplicated;
 			int sm = 0;
 			for (map<int, int>::iterator source_month = month_ranges.begin(); source_month != month_ranges.end(); ++source_month)

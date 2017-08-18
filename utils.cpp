@@ -7,7 +7,7 @@
 #include <string>
 #include "python_function.h"
 #include <valarray> 
-#include "MetVar.h"
+
 
 using namespace std;
 using namespace boost;
@@ -97,11 +97,12 @@ namespace UTILS
 
 		for (vector<string>::iterator variable = final_var_list.begin(); variable != final_var_list.end(); variable++)
 		{
-			MetVar *st_var = stat->getMetvar(*variable);
+			MetVar st_var = stat->getMetvar(*variable);
 			//use masked arrays for ease of filtering later
-			cout << st_var->getMdi();
-			std::valarray<string> valmask(st_var->getMdi(),fulltimes.size());
-			//valmask[match] = st_var->getData()[match_reverse];
+			
+			std::valarray<string> valmask(st_var.getMdi(),fulltimes.size());
+			valmask[match];
+			st_var.getData()[match_reverse];
 			//but re-mask those filled timestamps which have missing data
 
 		}
