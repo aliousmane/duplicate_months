@@ -1,0 +1,5 @@
+mk_netcdf_files.py
+1379  nc_var[:] = ncdf.stringtoarr(StationIDs[st],12) from
+nc_var[:] = ncdf.stringtochar(StationIDs[st],12
+stationsvar[:,0]=ncdf.stringtochar(input_station_id)	ligne 1639
+ ppt1cvar[:,0]=ncdf.stringtochar(precip1_condition)		ligne 1663
