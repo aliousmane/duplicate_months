@@ -31,17 +31,19 @@ struct MetVar;
 	string station::getId(){ return station::m_id; }
 	string station::getName(){ return station::m_name; }
 	string station::getWmoId(){ return station::m_wmoid; }
-	void station::setQc_flags(string *qc_flags){ /*station::m_qc_flags = qc_flags;*/ }
+	void station::setQc_flags(std::valarray<std::valarray<std::string>> qc_flags){ station::m_qc_flags = qc_flags; }
+	std::valarray<std::valarray<std::string>> station::getQc_flags(){ return station::m_qc_flags; }
 	void station::setMetVar(MetVar metvar, string var){ (station::m_Met_var)[var]=metvar; }
-	MetVar station::getMetvar(string var)
+	MetVar* station::getMetvar(string var)
 	{ 
 		
-		return station::m_Met_var[var]; 
+		return &station::m_Met_var[var]; 
 	}
 	void station::setTime_units(string units){ m_time.units = units; }
 	void station::setTime_data(std::vector<int> data){ copy(data.begin(), data.end(), std::back_inserter(m_time.data)); }
-	std::string station::getTime_units(){ return m_time.units; }
-	std::vector<int> station::getTime_data(){ return m_time.data; }
-	void station::setHistory(string history){ m_history=history; }
+	std::string station::getTime_units(){ return station::m_time.units; }
+	std::vector<int> station::getTime_data(){ return station::m_time.data; }
+	void station::setHistory(string history){ station:m_history = history; }
+	std::string station::getHistory(){ return station::m_history; }
 
 	

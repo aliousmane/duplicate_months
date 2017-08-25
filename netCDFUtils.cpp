@@ -134,7 +134,7 @@ namespace NETCDFUTILS
 			day = (data[2].size() == 1) ? "0" + data[2] : data[2];
 			hour = atoi(data[3].c_str());
 			boost::gregorian::date  dt_time;
-			cout << year << month << day << data[3] << "	";;
+			cout << year << month << day << data[3] << "	";
 			try
 			{
 				dt_time = boost::gregorian::date_from_iso_string(year + month + day);
@@ -228,6 +228,7 @@ namespace NETCDFUTILS
 				}
 			}
 		}
+		
 		//Creation des fichiers netcdf
 
 		string netcdf_filename = NETCDF_DATA_LOCS + namefile + ".nc";
@@ -375,17 +376,17 @@ namespace NETCDFUTILS
 		prfvar.putVar(t_pressure_flags);
 
 		//Free memory
-		delete t_TimeStamps;
-		delete t_temperatures;
-		delete t_temperature_flags;
-		delete t_dewpoints;
-		delete t_dewpoint_flags;
-		delete t_windspeeds;
-		delete t_windspeeds_flags;
-		delete t_winddirs;
-		delete t_winddirs_flags;
-		delete t_pressure;
-		delete t_pressure_flags;
+		delete[] t_TimeStamps;
+		delete[] t_temperatures;
+		delete[] t_temperature_flags;
+		delete[] t_dewpoints;
+		delete[] t_dewpoint_flags;
+		delete[] t_windspeeds;
+		delete[] t_windspeeds_flags;
+		delete[] t_winddirs;
+		delete[] t_winddirs_flags;
+		delete[] t_pressure;
+		delete[] t_pressure_flags;
 		//if extra ....
 
 		//zip file
@@ -403,8 +404,7 @@ namespace NETCDFUTILS
 	void read(string filename, station *stat, std::vector<std::string> process_var, vector<string>  opt_var_list, bool read_input_station_id, bool read_qc_flags, bool read_flagged_obs)
 	{
 
-		try
-		{
+		
 
 			NcFile ncFile(filename.c_str(), NcFile::read, NcFile::nc4classic);
 
@@ -437,11 +437,22 @@ namespace NETCDFUTILS
 				//Ajout des attributs à l'objet Metvar
 				//Attribut unit
 				try{ this_var.setUnits(getAttribute<string>(var, "units")); }
-				catch (NcException &e){  }
+				catch (NcException &e)
+				{
+					cerr <<1 <<"	"<< *variable << e.what() << endl;
+				}
 				//attribut dtype
 				NcType dtype = var.getType();
 				this_var.setDtype(dtype.getName());
-
+				// Data 
+				if (*variable != "input_station_id")
+				{
+					float *data = new float[ncFile.getDim("time").getSize()];
+					var.getVar(data);
+					valarray<float> vdata(data, ncFile.getDim("time").getSize());
+					this_var.setData(vdata);
+					delete[] data;
+				}
 				// section for non - default netcdf attributes
 				if (*variable == "time")
 				{
@@ -451,139 +462,340 @@ namespace NETCDFUTILS
 					
 				}
 				//Attribut missing value (mdi)
-				try{ this_var.setMdi(getAttribute<string>(var, "missing_value")); }
+				
+				try{ this_var.setMdi( to_string(getAttribute<float>(var,"missing_value")) ); }
 				catch (NcException &e)
 				{
+					cerr << 2 << "	" << *variable << e.what() << endl;
 					if ((*variable) == "temperatures")
 						this_var.setMdi("-1e30");
 					else if ((*variable) == "input_station_id")
 						this_var.setMdi("null");
 				}
 				//Attribut valid_max
-				try{ this_var.setValidMax(getAttribute<string>(var, "valid_max")); }
-				catch (NcException &e){}
+				try{ this_var.setValidMax(to_string(getAttribute<float>(var,"valid_max"))); }
+				catch (NcException &e){ cerr << 3 << "	" << *variable << e.what() << endl; }
 				//Attribut valid_min
 				try{
-					this_var.setValidMin(getAttribute<string>(var, "valid_min"));
+					this_var.setValidMin(to_string(getAttribute<float>(var,"valid_min")));
 				}
-				catch (NcException ){}
+				catch (NcException& e){ cerr << 4 << "	" << *variable << e.what() << endl; }
 				//Attribut standard_name
 				try{
-					this_var.setStandard_name(getAttribute<string>(var, "standard_name"));
+					this_var.setStandard_name(getAttribute<string>(var,"standard_name"));
 				}
-				catch (NcException ){}
+				catch (NcException& e){ cerr << 5 << "	" << *variable << e.what() << endl; }
 				//Attribut coordinates
 				try{
 					this_var.setCoordinates(getAttribute<string>(var, "coordinates"));
 				}
-				catch (NcException ){}
+				catch (NcException& e){ cerr << 6 << "	" << *variable << e.what() << endl; }
 				//Attribut cell_methods
 				try{
 					this_var.setCellmethods(getAttribute<string>(var, "cell_methods"));
 				}
-				catch (NcException ){}
+				catch (NcException& e){ cerr << 7 << "	" << *variable << e.what() << endl; }
 				
 				try
 				{
-					this_var.setFlagged_value(getAttribute<string>(var, "flagged_value"));
+					//this_var.setFlagged_value(static_cast<float>(atof(getAttribute<string>(var, "flagged_value").c_str())));
+					this_var.setFlagged_value(getAttribute<float>(var, "flagged_value"));
 				}
 				catch (NcException& e)
 				{
+					cerr << 8 << "	" << *variable << e.what() << endl;
 					if (*variable == "temperatures" || *variable == "dewpoints" || *variable == "slp" || *variable == "windspeeds")
-						this_var.setFlagged_value ("-2.e30");
+						this_var.setFlagged_value (-2.e30);
 					else
-						this_var.setFlagged_value("-888");
+						this_var.setFlagged_value(-888);
 				}
 				//Ajouter la variable méteo à la liste des variables de la station stat
 				stat->setMetVar(this_var, *variable);
-				
 			}
+			
 			//read in the qc_flags array
 			if (read_qc_flags == true)
 			{
-				try
-				{
-					string* qc_flags_values = new string[stat->getTime_data().size()];
+				
+					
 					NcVar qc_flags = ncFile.getVar("quality_control_flags");
-					/*try
-					{ 
-						qc_flags.getVar(qc_flags_values); 
+					if(qc_flags.isNull())
+						cout << "no QC flags available" << endl;
+					else
+					{
+						const int ligne = stat->getMetvar("time")->getData().size();
+						float **qcflags = 0;
+						qcflags = new float*[ligne];
+						for (int i = 0; i < ligne; i++)
+							qcflags[i] = new float[NBVAR];
+						qc_flags.getVar(qcflags);
+						for (int i = 0; i<ligne ; i++) 
+							delete[] qcflags[i];
+						delete[]qcflags;
 					}
-					catch (...){}*/
-					stat->setQc_flags(qc_flags_values);    // add flags to  the attribute flag of the station
-				}
-				catch (NcException&  e)
-				{
-					//cerr << e.what() << endl;
-					cout << "no QC flags available" << endl;
-				}
 			}
+
 			//read in the flagged_obs array
 			if (read_flagged_obs == true)
 			{
-				try
+				
+				//Check if variable flagged_value exist in the netCDF file
+				if (ncFile.getVar("flagged_value").isNull())
+					cout << "no flagged obs available in netcdf file " << endl;
+				else // if doesn't exist, make an empty array 
 				{
-					//Check if variable flagged_value exist in the netCDF file
-					NcVar flagged_obs = ncFile.getVar("flagged_value");
-				}
-				catch (NcException& e)
-				{
-					cerr << e.what() << endl;
-					cout << "no flagged obs available in netcdf file" << endl;
-					//if doesn't exist, make an empty array  len(station.time.data),len(var_list)])
-
-					vector< vector<string> > flagged_obs; //matrice [temps][variable]
-
-					vector<string> column;
-
-					//and set empty array to be correct MDI for variable
-
-					for (vector<string>::iterator var = process_var.begin(); var != process_var.end(); ++var)
+					const int ligne = stat->getMetvar("time")->getData().size();
+					for (vector<string>::iterator var = process_var.begin(); var != process_var.end(); var++)
 					{
-						MetVar st_var = stat->getMetvar(*var);
-						for (int i = 0; i < stat->getTime_data().size(); i++) //Nombre d'observations recueillies.
-							column.push_back(st_var.getMdi());
-						//Affecter la valeur manquante sur la colonne correspondant à la variable meteo
-						flagged_obs.push_back(column);
+						valarray<float> flaggedobs(static_cast<float>(atoi(stat->getMetvar(*var)->getMdi().c_str())), ligne);
+						//push array into relevant attribute
+						stat->getMetvar(*var)->setFlagged_obs(flaggedobs);
 					}
 				}
 			}
+
 			//read in reporting statistics - just to carry through
-			try
-			{
-				NcVar reporting_stats = ncFile.getVar("reporting_stats");
-				string* reporting_values = new string[stat->getTime_data().size()];
-				//reporting_stats.getVar(reporting_values);
-				int v = 0;
-				for (vector<string>::iterator var = process_var.begin(); var != process_var.end(); ++var, v++)
-				{
-					MetVar st_var = stat->getMetvar(*var);
-					//st_var->setReportingStats(reporting_values[v]);
-				}
-			}
-			catch (NcException& e)
-			{
+
+			if (ncFile.getVar("reporting_stats").isNull())
 				cout << "no reporting stats available in netcdf file" << endl;
-			}
-			try
+			else
 			{
-				// Global attribute history
-				NcGroupAtt attr = ncFile.getAtt("history");
+				NcVar reportings_stats = ncFile.getVar("reporting_stats");
+				float *reporting = new float[process_var.size()];
+				reportings_stats.getVar(reporting);
+				int v = 0;
+				for (vector<string>::iterator var = process_var.begin(); var != process_var.end(); ++var,v++)
+				{
+					valarray<float> report(reporting[v]);
+					stat->getMetvar(*var)->setReportingStats(report);
+				}
+				delete[] reporting;
+			}
+			
+			
+			// Global attribute history
+			if(ncFile.getAtt("history").isNull())
+				stat->setHistory("");
+			else
+			{
 				string att;
-				attr.getValues(att);
+				ncFile.getAtt("history").getValues(att);
 				stat->setHistory(att);
 			}
-			catch (NcException& e)
+	}
+	
+	/*Writes the netcdf file*/
+	void write(const string filename1, station *stat, std::vector<std::string> var_list, vector<string>  opt_var_list, valarray<bool> compressed,
+		bool write_QC_flags , bool write_flagged_obs  )
+	{
+		
+		char const * const FileName = filename1.c_str();
+		NcFile outfile(FileName, NcFile::replace, NcFile::nc4classic);
+		//sort length of time axis if compressed time
+		NcDim time_dim;
+		NcDim test_dim;
+		NcDim flagged_dim;
+		if (compressed.size()!=0)
+			time_dim = outfile.addDim("time", compressed.size());
+		else
+			time_dim = outfile.addDim("time", stat->getTime_data().size());
+		//sort character dimensions
+		NcDim long_char_dim = outfile.addDim("long_character_length", 12);
+		NcDim char_dim = outfile.addDim("character_length", 4);
+		NcDim coords_len = outfile.addDim("coordinate_length", 1);
+		vector<NcDim> dims;
+		dims.push_back(time_dim);
+		dims.push_back(long_char_dim);
+		//sort other dimensions if required
+		
+		if (write_QC_flags)
+		{
+			
+			//int qc_test_length = station.qc_flags.shape[1]
+			test_dim = outfile.addDim("test", 8);
+		}
+		if (write_flagged_obs)
+		{
+			
+			flagged_dim = outfile.addDim("flagged", var_list.size());
+		}
+		// set up reporting stats if attribute available
+		NcDim reportingT_dim, reportingV_dim, reporting2_dim;
+		try
+		{
+			MetVar* st_var = stat->getMetvar(var_list[0]);
+			reportingT_dim = outfile.addDim("reporting_t", st_var->getReportingStats().size()); // N months
+			reportingV_dim = outfile.addDim("reporting_v", var_list.size());
+			reporting2_dim = outfile.addDim("reporting_2", 2); // accuracy and frequency
+		}
+		catch (NcException &e)
+		{
+			cout << "no reporting information - cannot set up dimensions" << endl;
+		}
+		//write station coordinates
+		double t_latitude[1] = { stat->getLat() };
+		double t_longitude[1] = { stat->getLon() };
+		double t_elevation[1] = { stat->getElev() };
+		write_coordinates<double>(&outfile, "longitude", coords_len, "longitude", "station_longitude", "degrees_east", "X", t_longitude);
+		write_coordinates<double>(&outfile, "latitude", coords_len, "latitude", "station_latitude", "degrees_north", "Y", t_latitude);
+		write_coordinates<double>(&outfile, "elevation", coords_len, "surface_altitude", "vertical distance above the surface", "meters", "Z", t_elevation);
+
+		//station ID as base variable
+		NcVar nc_var = outfile.addVar("station id", ncChar, long_char_dim);
+		//nc_var.putAtt("Standard_name", "station_identification_code");
+		nc_var.putAtt("long_name", "Station ID number");
+		char strtoarray_ID[10];
+		strcpy(strtoarray_ID, stat->getId().c_str());
+		nc_var.setCompression(false, true, 9);
+		nc_var.putVar(strtoarray_ID);
+		
+		//if optional / carry through variables given, then set to extract these too
+		vector<string> full_var_list;
+		copy(var_list.begin(), var_list.end(), std::back_inserter(full_var_list));
+		if (opt_var_list.size() != 0)
+		{
+			copy(opt_var_list.begin(), opt_var_list.end(), std::back_inserter(full_var_list));
+		}
+		//  spin through all attributes and put them into the file
+		full_var_list.push_back("time");
+		full_var_list.push_back("input_station_id");
+		for (string var : full_var_list)
+		{
+			MetVar* st_var = stat->getMetvar(var);
+			if (var == "input_station_id")
+				nc_var = outfile.addVar(st_var->getName(), ncString, dims);
+			else
 			{
-				stat->setHistory("");
+				if (var == "time")
+					nc_var = outfile.addVar(st_var->getName(), ncDouble, time_dim);
+				else nc_var = outfile.addVar(st_var->getName(), ncDouble, time_dim);
+			}
+			nc_var.setCompression(false, true, 9);
+			nc_var.putAtt("long_name", st_var->getLong_Name());
+			nc_var.putAtt("standard_name", st_var->getStandardname());
+			nc_var.putAtt("units", st_var->getUnits());
+			nc_var.putAtt("missing_value", st_var->getMdi());
+			nc_var.putAtt("flagged_value", to_string(st_var->getFdi()));
+			nc_var.putAtt("valid_min", st_var->getValidMin());
+			nc_var.putAtt("valid_max", st_var->getValidMax());
+			nc_var.putAtt("coordinates", st_var->getCoordinates());
+			nc_var.putAtt("cell_methods", st_var->getCellmethods());
+
+			//extra attributes
+			// have to expand string array out into individual characters if appropriate
+			if (var == "time")
+				nc_var.putAtt("calendar", st_var->getCalendar());
+			nc_var.putAtt("end_month", "12");
+		}
+		//write QC flag information if available
+		
+		if (write_QC_flags)
+		{
+			try
+			{
+				vector<NcDim> time_test;
+				time_test.push_back(time_dim);
+				time_test.push_back(test_dim);
+				nc_var = outfile.addVar("quality_control_flags", ncDouble,time_test);
+				nc_var.putAtt("units", "1");
+				nc_var.putAtt("long_name", "Quality Control status for individual obs");
+				if (compressed.size() != 0)
+				{
+
+				}
+				else
+				{
+
+				}
+			}
+			catch (NcException &e)
+			{
+				cout << "qc_flags attribute doesn't exist" << endl;
 			}
 		}
-		catch (NcException& e)
+		//combine all flagged observations together to output as single array in netcdf file - if available
+		//only done on masking?
+		if (write_flagged_obs)
 		{
-			cerr << e.what() << endl;
+			try
+			{
+				vector<NcDim> time_flag;
+				time_flag.push_back(time_dim);
+				time_flag.push_back(flagged_dim);
+				//flagged_obs = np.zeros([len(station.time.data), len(var_list)])
+				int v = 0;
+				for (string var : var_list)
+				{
+					MetVar* st_var = stat->getMetvar(var);
+					//flagged_obs[:, v] = st_var.flagged_obs
+					nc_var = outfile.addVar("flagged_value", ncDouble, time_flag);
+					nc_var.putAtt("units", "1");
+					nc_var.putAtt("missing_value", "-1e30");
+					string ch = "Observation Values removed by QC flags";
+					for (string var : var_list)
+						ch += "" + var;
+					nc_var.putAtt("long_name",ch);
+					nc_var.putAtt("cell_methods", "latitude: longitude: time: point");
+					nc_var.putAtt("coordinates ", "latitude longitude elevation");
+					if (compressed.size() != 0)
+					{
+
+					}
+					else
+					{
+
+					}
+					v++;
+				}
+			}
+			catch (NcException &e)
+			{
+				cout << "no flagged observations." << endl;
+			}
+		}
+		//combine all reporting accuracies together to output as single array in netcdf file - if available
+		try
+		{
+			valarray<float> reporting_stats;
+			
+			for (string var : var_list)
+			{
+				MetVar* st_var = stat->getMetvar(var);
+				//std::copy(begin(st_var.getReportingStats()), end(st_var.getReportingStats()), std::back_inserter(reporting_stats)) ;
+				reporting_stats = reporting_stats + st_var->getReportingStats();
+			}
+			vector<NcDim> reporting_dims;
+			reporting_dims.push_back(reportingV_dim);
+			reporting_dims.push_back(reportingT_dim);
+			reporting_dims.push_back(reporting2_dim);
+			nc_var = outfile.addVar("reporting_stats", ncFloat, reporting_dims);
+			nc_var.putAtt("units", "1");
+			nc_var.putAtt("missing_value", "-999");
+			string ch = "Reporting frequency and accuracy for each month and variable in following order: ";
+			for (string var : var_list)
+				ch += "" + var;
+			nc_var.putAtt("long_name", ch);
+			nc_var.putAtt("cell_methods", "latitude: longitude: time: point");
+			nc_var.putAtt("coordinates ", "latitude longitude elevation");
+			//nc_var[:] = reporting_stats
+		}
+		catch (NcException &e)
+		{
+			cout << "no reporting accuracy information" << endl;
 		}
 		
-	}
+		// Global Attributes
+		
+		//from code
+		outfile.putAtt("station_information", "Where station is a composite the station id refers to the primary source used in the timestep and does apply to all elements");
+		boost::format fmter("%1%");
+		fmter% boost::gregorian::day_clock().local_day();
+		outfile.putAtt("Metadata_Conventions"," Unidata Dataset Discovery v1.0, CF Discrete Sampling Geometries Conventions");
+		outfile.putAtt("featureType", "timeSeries");
+		outfile.putAtt("Conventions", " CF - 1.6");
+		outfile.putAtt("date_created", fmter.str());
+		outfile.putAtt("history", stat->getHistory());
 
+	}
 }
 

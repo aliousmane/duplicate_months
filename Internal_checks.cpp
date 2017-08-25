@@ -30,7 +30,7 @@ using namespace DUPLICATE_MONTHS;
 
 namespace INTERNAL_CHECKS
 {
-	void internal_checks(vector<station>  &station_info, bool duplicate, bool second,string *DATE)
+	void internal_checks(vector<station>  &station_info, bool duplicate, bool odd, bool frequent, bool second, string *DATE)
 	{
 		boost::gregorian::date  DATESTART = boost::gregorian::date_from_iso_string(DATE[0]);
 		boost::gregorian::date  DATEEND = boost::gregorian::date_from_iso_string(DATE[1]);
@@ -84,6 +84,7 @@ namespace INTERNAL_CHECKS
 				continue;
 			}
 			// if running through the first time
+			valarray<bool> match_to_compress;
 			if (first)
 			{
 				// tester si le fichier existe
@@ -99,36 +100,64 @@ namespace INTERNAL_CHECKS
 				NETCDFUTILS::read(filename,&stat,process_var,carry_thru_vars);
 				
 				//lire dans le fichier netcdf
-				logfile << "Total station record size" << endl;//  len(station.time.data)" << endl; //len(station.time.data) n
-				UTILS::create_fulltimes(&stat,process_var, DATESTART, DATEEND, carry_thru_vars);
+				logfile << "Total station record size" << stat.getMetvar("time")->getData().size() << endl;
+
+				match_to_compress = UTILS::create_fulltimes(&stat,process_var, DATESTART, DATEEND, carry_thru_vars);
+
+				//Initialiser station.qc_flags
+				for (string var : process_var)
+				{
+					MetVar* st_var = stat.getMetvar(var);
+					//st_var.setReportingStats(/*utils.monthly_reporting_statistics(st_var, DATASTART, DATAEND)*/);
+				}
 			}
 			else if (second)
 			{
-				//lire le fichier _mask.nc
-				//match_to_compress = utils.create_fulltimes(station, process_vars, DATASTART, DATAEND, carry_thru_vars)
+				string filename = NETCDF_DATA_LOCS + (stat).getId() + "_mask.nc";
+				boost::filesystem::path p{ filename };
+				try
+				{
+					boost::filesystem::exists(p);
+				}
+				catch (std::exception&  e)
+				{
+					cout << e.what() << endl;
+				}
+				NETCDFUTILS::read(filename, &stat, process_var, carry_thru_vars);
+				match_to_compress = UTILS::create_fulltimes(&stat, process_var, DATESTART, DATEEND, carry_thru_vars);
 			}
-			if (duplicate)
+			if (duplicate) //check on temperature ONLY
 			{
 				//Appel à la fonction duplicate_months de qc_tests
-				vector<string> variable_list;
-				vector<int> flag_col;
-				DUPLICATE_MONTHS::dmc(stat ,variable_list, process_var,flag_col, DATESTART, DATEEND,logfile);
+				vector<string> variable_list = { "temperature" };
+				
+				DUPLICATE_MONTHS::dmc(stat,variable_list, process_var,0, DATESTART, DATEEND,logfile);
 			}
+			if (odd)
+			{
 
+			}
+			if (frequent)
+			{
+
+			}
 			//Write to file
 			if (first)
 			{
+				string filename = NETCDF_DATA_LOCS + (stat).getId() + "_internal.nc";
+				NETCDFUTILS::write(filename, &stat, process_var, carry_thru_vars, match_to_compress);
 			}
 			else if (second)
 			{
-
+				string filename = NETCDF_DATA_LOCS + (stat).getId() + "_internal2.nc";
+				NETCDFUTILS::write(filename, &stat, process_var, carry_thru_vars, match_to_compress);
 			}
 			logfile << boost::gregorian::day_clock::local_day() << endl;
 			logfile << "processing took " << posix_time::second_clock::local_time() - process_start_time << "  s" << endl;
 			if (logfile)
-				logfile.close();
+				logfile.close();//Fermeture du fichier
 			cout << "Internal Checks completed" << endl;
-		}
-		//Fermeture du fichier
+		} //end for station
+		
 	}
 }
