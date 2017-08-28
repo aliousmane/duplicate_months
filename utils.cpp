@@ -212,4 +212,68 @@ namespace UTILS
 		strftime(format, 32, "%Y-%m-%d %H-%M", &timeInfo);
 		stat->setHistory(stat->getHistory() + text + format);
 	}
+	/*
+		Return the data masked by the flags
+		Retourner un array où les valeurs qui correspondent aux indices 
+		où st_var.flags==1 sont masquées
+	*/
+
+	valarray<float> apply_filter_flags(MetVar *st_var)
+	{
+		valarray<bool> mask_where(true, st_var->getFlags().size());
+		for (int i = 0; i < st_var->getFlags().size(); i++)
+		{
+			if (st_var->getFlags()[i] == 1)
+			{
+				mask_where[i] = false;
+			}
+		}
+		return  st_var->getData()[mask_where];
+	}
+
+	float reporting_accuracy(valarray<float> good_values, bool winddir)
+	{
+		float resolution = -1;
+		if (winddir)
+		{
+			resolution = 1;
+			if (good_values.size() > 0)
+			{
+				valarray<float> binEdges = PYTHON_FUNCTION::arange<float>(362, 0);
+				valarray<float> hist = PYTHON_FUNCTION::histogram<float>(good_values, binEdges);
+				//normalise
+				hist = hist / hist.sum();
+
+				valarray<float> hist1 = hist[PYTHON_FUNCTION::arange<size_t>(360 + 90, 90, 90)];
+				if (hist1.sum() >= 0.6) resolution = 90;
+				hist1 = hist[PYTHON_FUNCTION::arange<size_t>(360 + 45, 45, 45)];
+				if (hist1.sum() >= 0.6) resolution = 45;
+				hist1 = hist[PYTHON_FUNCTION::Arange(360 + 22.5, 22.5, 22.5)];
+				if (hist1.sum() >= 0.6) resolution = 10;
+
+				cout << "Wind dir resolution =" << resolution << " degrees" << endl;
+			}
+		}
+		else
+		{
+			if (good_values.size() > 0)
+			{
+				valarray<float> remainders = std::abs(good_values) - std::abs(good_values.apply(UTILS::MyApplyRoundFunc));
+				valarray<float> binEdges = PYTHON_FUNCTION::arange<float>(1.05, -0.05, 0.0);
+				valarray<float> hist = PYTHON_FUNCTION::histogram<float>(good_values, binEdges);
+
+				hist = hist / hist.sum();
+				if (hist[0] >= 0.3)
+					if (hist[5] >= 0.15)
+						resolution = 0.5;
+					else
+						resolution = 1.0;
+				else
+					resolution = 0.1;
+
+			}
+		}
+		return resolution;
+
+	}
 }

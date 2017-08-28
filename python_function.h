@@ -27,11 +27,29 @@ namespace PYTHON_FUNCTION
 			(*t).push_back(i);
 	}
 	template<typename T>
-	inline std::valarray<T> arange(int stop, int start = 0)
+	inline std::valarray<T> arange(T stop, T start = 0, T step = 1)
 	{
-		std::valarray<T> val(stop - start);
-		for (int i = start, j = 0; i < stop; i++, j++)
+		int taille = int(ceil((stop - start) / step));
+		std::valarray<T> val(taille);
+
+		for (int j = 0; j < taille; j++, start = start + step)
+			val[j] = start;
+		return val;
+		/*int taille = int((stop - start) / step);
+		std::valarray<T> val(taille);
+		int j = 0;
+		for (int i = start, j = 0; i < stop; i += step, j++)
 			val[j] = static_cast<T>(i);
+		return val;*/
+	}
+	
+	inline std::valarray<size_t> Arange(float stop, float start, float step)
+	{
+		int taille = int((stop - start) / step);
+		std::valarray<size_t> val(taille);
+
+		for (int j = 0; j < taille; j++, start = start + step)
+			val[j] = int(ceil(start));
 		return val;
 	}
 	/*Test whether each element of a 1 - D array is also present in a second array
@@ -83,5 +101,24 @@ namespace PYTHON_FUNCTION
 			if (v1[i] == value) masque[i]=false ;
 		}
 		return v1[masque];
+	}
+	template<typename T>
+	inline std::valarray <T> histogram(std::valarray<float> data, std::valarray<float> bin)
+	{
+		std::valarray<float> hist(bin.size() - 1);
+
+		bool lastbin = true;
+		for (int i = 0; i < data.size(); i++)
+			for (int j = 0; j < bin.size(); j++)
+			{
+				if (data[i] >= bin[j] && data[i] < bin[j + 1])
+					hist[j]++;
+				if (data[i] == bin[bin.size() - 1] && lastbin)
+				{
+					hist[bin.size() - 2]++;
+					lastbin = false;
+				}
+			}
+		return hist;
 	}
 }

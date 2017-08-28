@@ -18,5 +18,6 @@ namespace FREQUENT_VALUES
 		: param datetime end : datetime object of end of data
 		: param file logfile : logfile to store outputs
 	*/ 
-	void  fvc(station stat, std::vector<std::string> variable_list, std::vector<std::string> flag_col, boost::gregorian::date start, boost::gregorian::date end, std::ofstream &logfile);
+	void  fvc(station * stat, std::vector<std::string> variable_list, std::vector<std::string> flag_col, boost::gregorian::date start, boost::gregorian::date end, std::ofstream &logfile);
+	
 }
