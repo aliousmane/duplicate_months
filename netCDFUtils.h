@@ -16,7 +16,7 @@ namespace
 	std::string NETCDF_DATA_LOCS = "C:\\Users\\oali\\Documents\\Visual Studio 2013\\Projects\\duplicate_months\\duplicate_months\\Data\\Weather\\NetCDF_files\\";
 	std::string CSV_OUTFILE_LOCS = "C:\\Users\\oali\\Documents\\Visual Studio 2013\\Projects\\duplicate_months\\duplicate_months\\Data\\Weather\\PEI 2015-2016H\\";
 	
-	
+	const int NBVAR=69; // recuperer la taille des données dans le fichier netCDF
 	
 }
 namespace NETCDFUTILS
@@ -63,7 +63,8 @@ namespace NETCDFUTILS
 	*/
 
 	template<typename T>
-	inline void  write_attributes(netCDF::NcVar nc_var, const std::string long_name, const std::string cell_method, T missing_value, const  std::string  units, const std::string  axis, T vmin, T vmax, const std::string coordinates, const std::string standard_name = "")
+	inline void  write_attributes(netCDF::NcVar nc_var, const std::string long_name, const std::string cell_method, T missing_value, 
+		const  std::string  units, const std::string  axis, T vmin, T vmax, const std::string coordinates, const std::string standard_name = "")
 	{
 		nc_var.putAtt("long_name", long_name);
 		nc_var.putAtt("cell_methods", cell_method);
@@ -120,9 +121,25 @@ namespace NETCDFUTILS
 	{
 		netCDF::NcVarAtt var_att = var.getAtt(chaine);
 		T att;
-		var_att.getValues(att);
+		
+	    var_att.getValues(att);
 		return att;
+		
+	}
+	template<>
+	inline float getAttribute(netCDF::NcVar var, const std::string chaine)
+	{
+		netCDF::NcVarAtt var_att = var.getAtt(chaine);
+
+			float *att = new float[4];
+			var_att.getValues(att);
+			return *att;
+
 	}
 	void MakeNetcdfFiles(const std::string fichier, std::string *date, station * stat);
-	void read(std::string filename, station * stat, std::vector<std::string> process_var, std::vector<std::string>  opt_var_list ,bool read_input_station_id = true, bool read_qc_flags = true, bool read_flagged_obs = true);
+	void read(std::string filename, station * stat, std::vector<std::string> process_var, std::vector<std::string>  opt_var_list ,
+		bool read_input_station_id = true, bool read_qc_flags = true, bool read_flagged_obs = true);
+	void write(const std::string filename1, station *stat, std::vector<std::string> var_list,
+		std::vector<std::string>  opt_var_list, std::valarray<bool> compressed, bool write_QC_flags = true,
+		bool write_flagged_obs = true);
 }

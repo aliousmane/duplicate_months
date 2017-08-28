@@ -3,12 +3,14 @@
 #include<vector>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include< map>
+#include <map>
 #include <string>
 #include "python_function.h"
 #include <valarray> 
-
-
+#include <boost/numeric/ublas/matrix.hpp>
+#include <algorithm>
+#include<fstream>
+#include <ctime>
 using namespace std;
 using namespace boost;
 using namespace PYTHON_FUNCTION;
@@ -17,24 +19,36 @@ namespace UTILS
 	/*
 		Returns locations of month starts(using hours as index)
 	*/
-	inline vector<int> month_starts(boost::gregorian::date start, boost::gregorian::date end)
+	inline void month_starts(boost::gregorian::date start, boost::gregorian::date end,vector<int> &month_locs)
 	{
-		vector<int> month_locs;
+		
 		boost::gregorian::date Date = start;
 		while (Date < end)
 		{
 			boost::gregorian::date_duration difference = Date - start;
 			month_locs.push_back(difference.days() * 24);
 				//increment counter
-				if (Date.month() < 10)
-					Date = boost::gregorian::date_from_iso_string(""+to_string(Date.year())+"0"+to_string((Date.month()+1))+"01"); 
-				else if (Date.month() < 12)
-					Date = boost::gregorian::date_from_iso_string("" + to_string(Date.year()) + to_string((Date.month()+1)) + "01");
-				else
-					Date = boost::gregorian::date_from_iso_string("" + to_string(Date.year()+1) + to_string((Date.month() + 1)) + "01");
+			if (Date.month() < 9)
+			{
+				/*cout << Date.month() << "";
+				cout << to_string(Date.year()) + "0" + to_string((Date.month() + 1)) + "01" << endl;*/
+				Date = boost::gregorian::date_from_iso_string(to_string(Date.year()) + "0" + to_string((Date.month() + 1)) + "01");
+			}
+			else if (Date.month() >= 9 && Date.month() < 12)
+			{
+				/*cout << Date.month() << "";
+				cout << to_string(Date.year()) + to_string((Date.month() + 1)) + "01" << endl;*/
+				Date = boost::gregorian::date_from_iso_string(to_string(Date.year()) + to_string((Date.month() + 1)) + "01");
+			}
+			else
+			{
+				/*cout << Date.month() << "";
+				cout << to_string(Date.year()+1) + "0101" << endl;*/
+				Date = boost::gregorian::date_from_iso_string(to_string((Date.year() + 1)) + "0101");
+			}
 					
 		}
-		return month_locs;
+		
 	}
 	/*
 		Create array of month start / end pairs
@@ -45,7 +59,8 @@ namespace UTILS
 	inline map<int,int> month_starts_in_pairs(boost::gregorian::date start, boost::gregorian::date end)
 	{
 			//set up the arrays of month start locations
-			vector<int> m_starts = month_starts(start, end);
+			vector<int> m_starts;
+			month_starts(start, end,m_starts);
 
 		    map<int,int > month_ranges; 
 			
@@ -60,28 +75,26 @@ namespace UTILS
 			return month_ranges;
 	}
 
-	void create_fulltimes(station* stat, vector<string> var_list, boost::gregorian::date start,boost::gregorian::date end, vector<string> opt_var_list, bool do_input_station_id, bool do_qc_flags, bool do_flagged_obs)
+	valarray<bool> create_fulltimes(station* stat, vector<string> var_list, boost::gregorian::date start,boost::gregorian::date end, vector<string> opt_var_list, bool do_input_station_id, bool do_qc_flags, bool do_flagged_obs)
 	{
 		//expand the time axis of the variables
 		boost::gregorian::date_duration DaysBetween = end - start;
-		vector<int> fulltimes;
+		valarray<float> fulltimes;
 		
 		//adjust if input netCDF file has different start date to desired
-		cout << stat->getTime_units();
 		string time_units = stat->getTime_units();
-		cout << time_units << endl;
 		//Extraire la date de la chaîne
 		time_units = time_units.substr(time_units.find("since "));  
 		time_units = time_units.substr(time_units.find(" "));
 		time_units.erase(std::remove(time_units.begin(), time_units.end(), ' '), time_units.end());
 		boost::gregorian::date  netcdf_start = boost::gregorian::date_from_iso_string(time_units);
 		boost::gregorian::date_duration offset = start- netcdf_start;
-		PYTHON_FUNCTION::arange(&fulltimes, DaysBetween.days() * 24,offset.days()*24);
+		fulltimes = PYTHON_FUNCTION::arange<float>(DaysBetween.days() * 24, offset.days() * 24);
 
 		valarray<bool> match, match_reverse;
 
-		match = PYTHON_FUNCTION::in1D<bool>(fulltimes, stat->getTime_data());
-		match_reverse = PYTHON_FUNCTION::in1D<bool>(stat->getTime_data(), fulltimes);
+		match = PYTHON_FUNCTION::in1D<float, float>(fulltimes, stat->getMetvar("time")->getData());
+		match_reverse = PYTHON_FUNCTION::in1D<float, float>(stat->getMetvar("time")->getData(), fulltimes);
 
 		//if optional/carry through variables given, then set to extract these too
 		vector<string> full_var_list;
@@ -93,19 +106,110 @@ namespace UTILS
 		}
 		vector<string> final_var_list;
 		copy(full_var_list.begin(), full_var_list.end(), std::back_inserter(final_var_list));
-		if (do_input_station_id)  final_var_list.push_back("input_station_id");
+		//if (do_input_station_id)  final_var_list.push_back("input_station_id");
 
 		for (vector<string>::iterator variable = final_var_list.begin(); variable != final_var_list.end(); variable++)
 		{
-			MetVar st_var = stat->getMetvar(*variable);
+			MetVar* st_var = stat->getMetvar(*variable);
 			//use masked arrays for ease of filtering later
 			
-			std::valarray<string> valmask(st_var.getMdi(),fulltimes.size());
-			valmask[match];
-			st_var.getData()[match_reverse];
+			std::valarray<float> valmask(static_cast<float>(atof(st_var->getMdi().c_str())), fulltimes.size());
+			if (match_reverse.size()!= 0)	
+			{
+				valmask = st_var->getData()[match_reverse];
+				 
+			}
 			//but re-mask those filled timestamps which have missing data
-
-		}
+			std::valarray<bool> mask_where(false,valmask.size());
+			for (int i = 0; i < valmask.size();i++)
+			{
+				if (valmask[i] != static_cast<float>(atof(st_var->getMdi().c_str())))
+				{
+					mask_where[i] = true;
+				}	
+			}
 			
+			stat->getMetvar(*variable)->setMaskedData(valmask[mask_where]);
+						
+			if (find(var_list.begin(), var_list.end(), *variable) != var_list.end() && do_flagged_obs == true)
+			{
+				//flagged values
+				valmask = static_cast<float>(atof(st_var->getMdi().c_str()));
+				std::valarray<float> v1;
+				if (st_var->getFlagged_obs().size() != 0)
+				{
+					v1 = st_var->getFlagged_obs()[match_reverse];
+					valmask = v1;
+				}
+				st_var->setFlagged_obs(valmask);
+				// flags - for filtering
+
+				valmask = static_cast<float>(atof(st_var->getMdi().c_str()));
+				if (st_var->getFlags().size() != 0)
+				{
+					v1 = st_var->getFlags()[match_reverse];
+					valmask = v1;
+					stat->getMetvar(*variable)->setFlags(valmask);
+				}
+			}
+			
+		}
+		//do the QC flags, using try / except
+		if (do_qc_flags == true)
+		{
+			/*try
+			{
+
+
+			}*/
+		}
+		//working in fulltimes throughout and filter by missing
+		if (offset.days() != 0)	fulltimes = PYTHON_FUNCTION::arange<float>( DaysBetween.days() * 24, offset.days() * 24);
+		stat->getMetvar("time")->setData(fulltimes);
+		return match;
+	}
+
+		/*
+		Return reporting accuracy & reporting frequency for variable
+
+		: param obj st_var :	station variable object
+		: param datetime start : start of data series
+		: param datatime end : e	nd of data series
+
+		: returns :
+		reporting_stats - Nx2 array, one pair for each month
+		'''
+		*/
+
+	void monthly_reporting_statistics(MetVar st_var, boost::gregorian::date start, boost::gregorian::date end)
+	{
+		map<int, int> monthly_ranges;
+		monthly_ranges= month_starts_in_pairs(start, end);
+	}
+	void print_flagged_obs_number(std::ofstream& logfile, string test, string variable, int nflags, bool noWrite)
+	{
+		if (!noWrite)
+		logfile << test<< " Check Flags :"<< variable  <<" :"<< nflags;
+	}
+	/*
+	Apply these flags to all variables
+		: param object station : the station object to be processed
+		: param list all_variables : the variables where the flags are to be applied
+		: param file logfile : logfile to store outputs
+		: returns :
+		*/
+	void apply_flags_all_variables(station* stat,vector<string> full_variable_list, int flag_col,ofstream& logfile, string test)
+	{
+
+	}
+	void append_history(station* stat, string text)
+	{
+		time_t _time;
+		struct tm timeInfo;
+		char format[32];
+		time(&_time);
+		localtime_s(&timeInfo, &_time);
+		strftime(format, 32, "%Y-%m-%d %H-%M", &timeInfo);
+		stat->setHistory(stat->getHistory() + text + format);
 	}
 }

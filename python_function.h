@@ -26,21 +26,62 @@ namespace PYTHON_FUNCTION
 		for (int i = start; i < stop; i++)
 			(*t).push_back(i);
 	}
-
+	template<typename T>
+	inline std::valarray<T> arange(int stop, int start = 0)
+	{
+		std::valarray<T> val(stop - start);
+		for (int i = start, j = 0; i < stop; i++, j++)
+			val[j] = static_cast<T>(i);
+		return val;
+	}
 	/*Test whether each element of a 1 - D array is also present in a second array
 	Returns a boolean array the same length as array 1 that is true where
 	an element of array 1 is in array 2 and false otherwise
 	@Docstring numpy.in1D python*/
-	template<typename T>
-	inline std::valarray<T> in1D(std::vector<int> v1, std::vector<int> v2)
+	template<typename T,typename S>
+	inline std::valarray<bool> in1D(std::valarray<T> v1, std::valarray<S> v2)
 	{
-		std::valarray<T> vec(v1.size());
+		std::valarray<bool> vec(v1.size());
+	
 		for (int i = 0; i < v1.size(); i++)
 		{
-			if (std::binary_search(v2.begin(), v2.end(), (v1.at(i))))
+			if (std::binary_search(std::begin(v2), std::end(v2), static_cast<S>(v1[i])))
 				vec[i]=true;
 			else vec[i]=false;
 		}
 		return vec;
+	}
+	template<typename T>
+	inline std::vector<int> np_where(std::valarray<T> v1, T value)
+	{
+		std::vector<int> vec;
+		for (int i = 0; i < v1.size(); i++)
+		{
+			if (v1[i] != value) vec.push_back(i);
+		}
+		return vec;
+	}
+	template<typename T>
+	inline std::vector<int> np_where(std::slice_array<T> v1, std::slice_array<T> v2)
+	{
+		std::vector<int> vec;
+		std::valarray<T> vl1(v1.size()), vl2(v2.size());
+		vl1 = v1;
+		vl2 = v2;
+		for (int i = 0; i < v1.size(); i++)
+		{
+			if (vl1[i]== vl2[i]) vec.push_back(i);
+		}
+		return vec;
+	}
+	template<typename T>
+	inline std::valarray <T> compressed(std::valarray<T> v1, T value)
+	{
+		std::valarray<bool> masque(true,v1.size());
+		for (int i = 0; i < v1.size(); i++)
+		{
+			if (v1[i] == value) masque[i]=false ;
+		}
+		return v1[masque];
 	}
 }

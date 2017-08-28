@@ -26,7 +26,7 @@ using namespace INTERNAL_CHECKS;
 
 
 
-string DATE[2]={ "20150101", "20170101" };
+string DATE[2]={ "19310101", "20170101"};
 
 //string LOG_OUTFILE_LOCS = "P: \\Project\\wbsTools\\HadISD\\Weather\\Data\\";
 //string CSV_OUTFILE_LOCS = "P: \\Project\\wbsTools\\HadISD\\Weather\\PEI 2015-2016H\\";
@@ -40,8 +40,7 @@ void read_file(string file, vector<station> &station_info)
 		de la classe station
 	*/
 	
-	  char_separator<char> sep(",");
-			
+		char_separator<char> sep(",");
 		ifstream input;
 		stringstream sst;
 		sst << file;
@@ -137,7 +136,9 @@ int main(int arg, char * argv)
 	//ncdf(station_info);
 	bool duplicate = true;
 	bool second = false;
-	internal_checks(station_info,duplicate,second,DATE);
+	bool odd = true;
+	bool frequent = true;
+	internal_checks(station_info,duplicate,odd,frequent,second,DATE);
 	std::system("PAUSE");
 	return 0;
 	

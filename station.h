@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <valarray>
+#include <boost/numeric/ublas/matrix.hpp>
 
 
 struct s_time
@@ -30,19 +31,32 @@ public:
 	void setUnits(std::string units){ m_units = units; }
 	void setCalendar(std::string calendar){ m_calendar = calendar; }
 	void setMdi(std::string mdi){ m_mdi = mdi; }
-	void  setValidMax(std::string valid_max){ m_valid_max = valid_max; }
-	void  setValidMin(std::string valid_min){ m_valid_min = valid_min; }
-	void  setCoordinates(std::string coordinates){ m_coordinates = coordinates; }
-	void  setFdi(std::string fdi){ m_fdi = fdi; }
-	void  setCellmethods(std::string cell_methods){ m_cell_methods = cell_methods; }
+	void setValidMax(std::string valid_max){ m_valid_max = valid_max; }
+	void setValidMin(std::string valid_min){ m_valid_min = valid_min; }
+	void setCoordinates(std::string coordinates){ m_coordinates = coordinates; }
+	void setFdi(float fdi){ m_fdi = fdi; }
+	void setCellmethods(std::string cell_methods){ m_cell_methods = cell_methods; }
 	void setStandard_name(std::string standard_name){ m_standard_name = standard_name; }
-	void setReportingStats(std::string reporting_stats){ m_reporting_stats = reporting_stats; }
+	void setReportingStats(std::valarray<float> reporting_stats){ m_reporting_stats = reporting_stats; }
+	void setFlagged_obs(std::valarray<float> flagged_obs){ m_flagged_obs = flagged_obs; }
+	void setFlagged_value(float flagged_value){ m_flagged_value = flagged_value; }
+	void setFlags(std::valarray<float> flag){ m_flags = flag; }
+	void setData(std::valarray<float> data){ m_data = data; }
+	void setMaskedData(std::valarray<float> data){ m_masked_data = data; }
 	std::string getMdi(){ return m_mdi; }
+	float getFdi(){ return m_fdi; }
 	std::string getDtype(){ return m_dtype; }
-	void setFlagged_obs(std::vector<std::string> flagged_obs){ m_flagged_obs = flagged_obs; }
-	void setFlagged_value(std::string flagged_value){ m_flagged_value = flagged_value; }
-	void setData(std::valarray<std::string> data){ m_data = data; }
-	std::valarray<std::string> getData(){ return m_data; }
+	std::string getStandardname(){ return m_standard_name; }
+	std::valarray<float> getFlagged_obs(){ return m_flagged_obs; }
+	std::valarray<float> getReportingStats(){ return m_reporting_stats; }
+	std::valarray<float> getData(){ return m_data; }
+	std::valarray<float> getMaskedData(){ return m_masked_data; }
+	std::valarray<float> getFlags(){ return m_flags; }
+	std::string getValidMax(){return m_valid_max ; }
+	std::string getValidMin(){return m_valid_min ; }
+	std::string getCoordinates(){ return m_coordinates; }
+	std::string getCellmethods(){ return m_cell_methods; }
+	std::string getCalendar(){ return m_calendar; }
 	std::string toString()
 	{
 		return "Variable :" + m_name + ", " + m_long_name;
@@ -68,12 +82,13 @@ private:
 	std::string m_valid_min;
 	std::string m_coordinates;
 	std::string m_cell_methods;
-	std::string m_fdi;
-	std::string m_flagged_value;
-	std::string m_reporting_stats;
-	std::vector<int> flags;
-	std::valarray<std::string> m_data;
-	std::vector <std::string> m_flagged_obs;
+	float m_fdi;
+	float m_flagged_value;
+	std::valarray<float> m_reporting_stats;
+	std::valarray<float> m_flags;
+	std::valarray<float> m_data;
+	std::valarray<float> m_masked_data; // données sans valeurs manquantes
+	std::valarray <float> m_flagged_obs;
 };
 class station
 {
@@ -86,14 +101,16 @@ public:
 		std::string getId();
 		std::string getName();
 		std::string getWmoId();
-		void setQc_flags(std::string * qc_flags);
+		void setQc_flags(std::valarray<std::valarray<std::string>> qc_flags);
+		std::valarray<std::valarray<std::string>> getQc_flags();
 		void setMetVar(MetVar metvar, std::string var);
-		MetVar getMetvar(std::string var);
+		MetVar* getMetvar(std::string var);
 		void setTime_units(std::string units);
 		void setTime_data(std::vector<int> data);
 		std::string getTime_units();
 		std::vector<int> getTime_data();
 		void setHistory(std::string history);
+		std::string getHistory();
 		double getLat();
 		double getLon();
 		double getElev();
@@ -106,7 +123,7 @@ private:
 	double m_lat;
 	double m_lon;
 	double m_elev;
-	std::vector<std::string> m_qc_flags;
+	std::valarray<std::valarray<std::string>> m_qc_flags;
 	std::map<std::string, MetVar >  m_Met_var;
 	s_time m_time;
 	std::string m_history;
