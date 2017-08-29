@@ -70,7 +70,17 @@ namespace PYTHON_FUNCTION
 		return vec;
 	}
 	template<typename T>
-	inline std::vector<int> np_where(std::valarray<T> v1, T value)
+	inline std::valarray<T> np_where(std::valarray<T> v1, T value)
+	{
+		std::valarray<T> vec(v1.size());
+		for (int i = 0; i < v1.size(); i++)
+		{
+			if (v1[i] != value) vec[i]=i;
+		}
+		return vec;
+	}
+	template<typename T>
+	inline std::vector<int> np_where_vec(std::valarray<T> v1, T value)
 	{
 		std::vector<int> vec;
 		for (int i = 0; i < v1.size(); i++)
@@ -92,8 +102,12 @@ namespace PYTHON_FUNCTION
 		}
 		return vec;
 	}
+	/*
+	    Return a valarray where value is deleted
+		equivalent to compressed,masqued_equals here
+	*/
 	template<typename T>
-	inline std::valarray <T> compressed(std::valarray<T> v1, T value)
+	inline std::valarray <T> masked_values(std::valarray<T> v1, T value)
 	{
 		std::valarray<bool> masque(true,v1.size());
 		for (int i = 0; i < v1.size(); i++)
@@ -121,4 +135,5 @@ namespace PYTHON_FUNCTION
 			}
 		return hist;
 	}
+
 }

@@ -103,8 +103,8 @@ namespace DUPLICATE_MONTHS
 						s_data = source_data[slice(0,overlap,1)];
 						t_data = source_data[slice(0,overlap,1)];
 						vector<int> s_valid, t_valid;
-						s_valid = PYTHON_FUNCTION::np_where(s_data, st_var->getFdi());
-						t_valid = PYTHON_FUNCTION::np_where(t_data, st_var->getFdi());
+						s_valid = PYTHON_FUNCTION::np_where_vec<float>(s_data, st_var->getFdi());
+						t_valid = PYTHON_FUNCTION::np_where_vec<float>(t_data, st_var->getFdi());
 						//if enough of an overlap
 						if (s_valid.size() >= MIN_DATA_REQUIRED && t_valid.size() >= MIN_DATA_REQUIRED)
 						{

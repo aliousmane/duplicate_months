@@ -186,7 +186,7 @@ namespace UTILS
 		map<int, int> monthly_ranges;
 		monthly_ranges= month_starts_in_pairs(start, end);
 	}
-	void print_flagged_obs_number(std::ofstream& logfile, string test, string variable, int nflags, bool noWrite)
+	 void print_flagged_obs_number(std::ofstream& logfile, string test, string variable, int nflags, bool noWrite)
 	{
 		if (!noWrite)
 		logfile << test<< " Check Flags :"<< variable  <<" :"<< nflags;
@@ -202,7 +202,7 @@ namespace UTILS
 	{
 
 	}
-	void append_history(station* stat, string text)
+	inline void append_history(station* stat, string text)
 	{
 		time_t _time;
 		struct tm timeInfo;
@@ -220,15 +220,8 @@ namespace UTILS
 
 	valarray<float> apply_filter_flags(MetVar *st_var)
 	{
-		valarray<bool> mask_where(true, st_var->getFlags().size());
-		for (int i = 0; i < st_var->getFlags().size(); i++)
-		{
-			if (st_var->getFlags()[i] == 1)
-			{
-				mask_where[i] = false;
-			}
-		}
-		return  st_var->getData()[mask_where];
+		
+		return  PYTHON_FUNCTION::masked_values<float>(st_var->getData(),1);
 	}
 
 	float reporting_accuracy(valarray<float> good_values, bool winddir)
@@ -274,6 +267,20 @@ namespace UTILS
 			}
 		}
 		return resolution;
+	}
+
+	/* create bins and bin centres from data 
+		given bin width covers entire range */
+	
+	void create_bins(valarray<float> indata, float binwidth, valarray<float> &bins, valarray<float>  &bincenters)
+	{
+		//set up the bins
+		int bmins = floor(indata.min());
+		int bmax = ceil(indata.max());
+		bins = PYTHON_FUNCTION::arange<float>(bmax + (3. * binwidth), bmins - binwidth, binwidth);
+		for (int i = 0; i < bins.size() - 1; i++)
+				bincenters[i] = 0.5*(bins[i] + bins[i+1]);
+
 
 	}
 }
