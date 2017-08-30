@@ -134,11 +134,9 @@ int main(int arg, char * argv)
 		cout <<station_info.at(i).toString()<<endl;*/
 	//Creer des fichiers netcdf à partir de chaque csv file.
 	//ncdf(station_info);
-	bool duplicate = true;
 	bool second = false;
-	bool odd = true;
-	bool frequent = true;
-	internal_checks(station_info,duplicate,odd,frequent,second,DATE);
+	test mytest;
+	internal_checks(station_info, mytest, second, DATE);
 	std::system("PAUSE");
 	return 0;
 	

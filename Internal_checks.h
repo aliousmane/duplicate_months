@@ -2,6 +2,24 @@
 #include "station.h"
 #include<string>
 
+
+struct test
+{
+	bool duplicate = true;
+	bool odd = true;
+	bool frequent = true;
+	bool diurnal = true;
+	bool gap = true;
+	bool records = true;
+	bool streaks = true;
+	bool climatological = true;
+	bool spike = true;
+	bool humidity = true;
+	bool cloud = true;
+	bool variance = true;
+	bool winds = true;
+};
+typedef struct test test;
 namespace
 {
 	std::vector<std::string> process_var{ "temperatures", "dewpoints", "windspeeds", "winddirs", "slp" };
@@ -11,5 +29,5 @@ namespace
 namespace INTERNAL_CHECKS
 
 {
-	void internal_checks(std::vector<station> &station_info, bool duplicate,bool odd,bool frequent, bool second,std::string *DATE);
+	void internal_checks(std::vector<station> &station_info, test mytest , bool second,std::string *DATE);
 }

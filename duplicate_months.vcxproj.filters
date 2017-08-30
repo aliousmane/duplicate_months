@@ -111,6 +111,12 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="frequent_values.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Diurnal_cycle..cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="duplicate_months.h">
@@ -132,6 +138,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="python_function.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="frequent_values.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Diurnal_cycle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

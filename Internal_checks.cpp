@@ -20,17 +20,18 @@
 #include<boost/chrono.hpp>
 #include "duplicate_months.h"
 #include "utils.h"
+#include "frequent_values.h"
 
 
 using namespace std;
 using namespace NETCDFUTILS;
 using namespace netCDF;
 using namespace boost;
-using namespace DUPLICATE_MONTHS;
+
 
 namespace INTERNAL_CHECKS
 {
-	void internal_checks(vector<station>  &station_info, bool duplicate, bool odd, bool frequent, bool second, string *DATE)
+	void internal_checks(vector<station>  &station_info, test mytest, bool second, string *DATE)
 	{
 		boost::gregorian::date  DATESTART = boost::gregorian::date_from_iso_string(DATE[0]);
 		boost::gregorian::date  DATEEND = boost::gregorian::date_from_iso_string(DATE[1]);
@@ -126,21 +127,37 @@ namespace INTERNAL_CHECKS
 				NETCDFUTILS::read(filename, &stat, process_var, carry_thru_vars);
 				match_to_compress = UTILS::create_fulltimes(&stat, process_var, DATESTART, DATEEND, carry_thru_vars);
 			}
-			if (duplicate) //check on temperature ONLY
+			if (mytest.duplicate) //check on temperature ONLY
 			{
 				//Appel à la fonction duplicate_months de qc_tests
 				vector<string> variable_list = { "temperature" };
 				
 				DUPLICATE_MONTHS::dmc(stat,variable_list, process_var,0, DATESTART, DATEEND,logfile);
 			}
-			if (odd)
+			if (mytest.odd)
 			{
 
 			}
-			if (frequent)
+			if (mytest.frequent)
 			{
-
+				/*vector<string> variable_list;
+				variable_list.push_back("temperatures");
+				variable_list.push_back("dewpoints");
+				variable_list.push_back("slp");
+				vector<int> flag_col;
+				flag_col.push_back(3);
+				flag_col.push_back(2);
+				flag_col.push_back(1);*/
+				FREQUENT_VALUES::fvc(&stat, { "temperatures","dewpoints","slp" }, { 1, 2, 3 }, DATESTART, DATEEND, logfile);
 			}
+			if (mytest.diurnal)
+			{
+				if (std::abs(stat.getLat() <= 60))
+					cout << "  ";
+				else
+					logfile << "Diurnal Cycle Check not run as station latitude" << stat.getLat()<< "  > 60 ";
+			}
+
 			//Write to file
 			if (first)
 			{

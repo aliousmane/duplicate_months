@@ -41,6 +41,7 @@ public:
 	void setFlagged_obs(std::valarray<float> flagged_obs){ m_flagged_obs = flagged_obs; }
 	void setFlagged_value(float flagged_value){ m_flagged_value = flagged_value; }
 	void setFlags(std::valarray<float> flag){ m_flags = flag; }
+	void setFlags(std::valarray<size_t> v_flag,float flag){ m_flags[v_flag] = flag; }
 	void setData(std::valarray<float> data){ m_data = data; }
 	void setMaskedData(std::valarray<float> data){ m_masked_data = data; }
 	std::string getMdi(){ return m_mdi; }
@@ -101,8 +102,11 @@ public:
 		std::string getId();
 		std::string getName();
 		std::string getWmoId();
-		void setQc_flags(std::valarray<std::valarray<std::string>> qc_flags);
-		std::valarray<std::valarray<std::string>> getQc_flags();
+		void setQc_flags(std::valarray<std::valarray<float>> qc_flags);
+		/* Remplir qc_flag correpondant à la variable qui se trouve à la position colonne
+		*/
+		void setQc_flags(std::valarray<float> qc_flags,std::slice indices,int index);
+		std::valarray<std::valarray<float>> getQc_flags();
 		void setMetVar(MetVar metvar, std::string var);
 		MetVar* getMetvar(std::string var);
 		void setTime_units(std::string units);
@@ -123,7 +127,7 @@ private:
 	double m_lat;
 	double m_lon;
 	double m_elev;
-	std::valarray<std::valarray<std::string>> m_qc_flags;
+	std::valarray<std::valarray<float>> m_qc_flags;
 	std::map<std::string, MetVar >  m_Met_var;
 	s_time m_time;
 	std::string m_history;

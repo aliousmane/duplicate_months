@@ -19,7 +19,6 @@ namespace PYTHON_FUNCTION
 			(*t).push_back(start + i*delta);
 	}
 	
-	
 	inline void arange(std::vector<int> *t, int stop, int start = 0)
 	{
 
@@ -80,6 +79,16 @@ namespace PYTHON_FUNCTION
 		return vec;
 	}
 	template<typename T>
+	inline std::valarray<std::size_t> npwhere(std::valarray<T> v1, T value)
+	{
+		std::valarray<std::size_t> vec(v1.size());
+		for (size_t i = 0; i < v1.size(); i++)
+		{
+			if (v1[i] != value) vec[i] = i;
+		}
+		return vec;
+	}
+	template<typename T>
 	inline std::vector<int> np_where_vec(std::valarray<T> v1, T value)
 	{
 		std::vector<int> vec;
@@ -136,4 +145,14 @@ namespace PYTHON_FUNCTION
 		return hist;
 	}
 
+	inline void concatenate(std::valarray<float> &val1, std::valarray<float> val2)
+	{
+		std::valarray<float> val(val1.size() + val2.size());
+		for (size_t i = 0; i < val1.size(); i++)
+			val[i] = val1[i];
+		for (size_t i = val1.size(); i < val.size(); i++)
+			val[i] = val2[i];
+		val1.resize(val.size());
+		val1 = val;
+	}
 }

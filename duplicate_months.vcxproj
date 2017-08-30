@@ -176,7 +176,9 @@
     <ClCompile Include="..\..\external\netCDF\cxx4\ncVar.cpp" />
     <ClCompile Include="..\..\external\netCDF\cxx4\ncVarAtt.cpp" />
     <ClCompile Include="..\..\external\netCDF\cxx4\ncVlenType.cpp" />
+    <ClCompile Include="Diurnal_cycle..cpp" />
     <ClCompile Include="duplicate_months.cpp" />
+    <ClCompile Include="frequent_values.cpp" />
     <ClCompile Include="Internal_checks.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="station.cpp" />
@@ -184,7 +186,9 @@
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Diurnal_cycle.h" />
     <ClInclude Include="duplicate_months.h" />
+    <ClInclude Include="frequent_values.h" />
     <ClInclude Include="Internal_checks.h" />
     <ClInclude Include="python_function.h" />
     <ClInclude Include="station.h" />

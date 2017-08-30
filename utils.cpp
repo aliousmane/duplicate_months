@@ -202,7 +202,7 @@ namespace UTILS
 	{
 
 	}
-	inline void append_history(station* stat, string text)
+	 void append_history(station* stat, string text)
 	{
 		time_t _time;
 		struct tm timeInfo;
@@ -275,8 +275,8 @@ namespace UTILS
 	void create_bins(valarray<float> indata, float binwidth, valarray<float> &bins, valarray<float>  &bincenters)
 	{
 		//set up the bins
-		int bmins = floor(indata.min());
-		int bmax = ceil(indata.max());
+		int bmins = int(floor(indata.min()));
+		int bmax = int(ceil(indata.max()));
 		bins = PYTHON_FUNCTION::arange<float>(bmax + (3. * binwidth), bmins - binwidth, binwidth);
 		for (int i = 0; i < bins.size() - 1; i++)
 				bincenters[i] = 0.5*(bins[i] + bins[i+1]);

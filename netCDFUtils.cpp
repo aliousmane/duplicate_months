@@ -140,7 +140,7 @@ namespace NETCDFUTILS
 				dt_time = boost::gregorian::date_from_iso_string(year + month + day);
 				//throw boost::gregorian::bad_day_of_month();
 			}
-			catch (boost::exception &e)
+			catch (...)
 			{
 				cout << "error with boost::gregorian";
 			}
@@ -526,10 +526,10 @@ namespace NETCDFUTILS
 						const int ligne = stat->getMetvar("time")->getData().size();
 						float **qcflags = 0;
 						qcflags = new float*[ligne];
-						for (int i = 0; i < ligne; i++)
+						for (size_t i = 0; i < ligne; i++)
 							qcflags[i] = new float[NBVAR];
 						qc_flags.getVar(qcflags);
-						for (int i = 0; i<ligne ; i++) 
+						for (size_t i = 0; i<ligne ; i++) 
 							delete[] qcflags[i];
 						delete[]qcflags;
 					}
@@ -628,7 +628,7 @@ namespace NETCDFUTILS
 			reportingV_dim = outfile.addDim("reporting_v", var_list.size());
 			reporting2_dim = outfile.addDim("reporting_2", 2); // accuracy and frequency
 		}
-		catch (NcException &e)
+		catch (NcException )
 		{
 			cout << "no reporting information - cannot set up dimensions" << endl;
 		}
@@ -708,7 +708,7 @@ namespace NETCDFUTILS
 
 				}
 			}
-			catch (NcException &e)
+			catch (NcException )
 			{
 				cout << "qc_flags attribute doesn't exist" << endl;
 			}
@@ -748,7 +748,7 @@ namespace NETCDFUTILS
 					v++;
 				}
 			}
-			catch (NcException &e)
+			catch (NcException )
 			{
 				cout << "no flagged observations." << endl;
 			}
@@ -779,7 +779,7 @@ namespace NETCDFUTILS
 			nc_var.putAtt("coordinates ", "latitude longitude elevation");
 			//nc_var[:] = reporting_stats
 		}
-		catch (NcException &e)
+		catch (NcException )
 		{
 			cout << "no reporting accuracy information" << endl;
 		}
